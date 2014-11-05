@@ -1,0 +1,54 @@
+#!/system/bin/sh
+
+exec 3>&1 4>&2
+trap 'exec 2>&4 1>&3' 0 1 2 3
+exec 1>/data/ETP/errores.log 2>&1
+# Everything below will go to the file 'errores.log'
+
+busybox mount -o remount,rw -t auto /system;
+busybox mount -o remount,rw -t auto /data;
+
+rm -f /data/ETP/dummy.log
+touch /data/ETP/dummy.log
+chmod 666 /data/ETP/dummy.log
+
+ETP=/data/ETP/dummy.log
+exec 2> /data/ETP/dummy.log
+echo "ETP LOG de restauración de Imeis" >> $ETP
+echo "$( date +"%d-%m-%Y %H:%M:%S" )\nScript de restauracion de imeis hecho por JohnnyBra" >> $ETP
+echo "Comprobando si existe copia de seguridad de los IMEIS" >> $ETP;
+if [ -f /data/dummy ]; then
+	echo "Copia encontrada, restaurando" >> $ETP
+	cp -f /data/dummy /data/nvram/md/NVRAM/NVD_IMEI/MP0B_001
+	chmod 660 /data/nvram/md/NVRAM/NVD_IMEI/MP0B_001
+	echo "restaurada correctamente" >> $ETP
+	else
+	if [ -f /storage/sdcard1/nvram/md/NVRAM/NVD_IMEI/MP0B_001 ]; then
+		cp -f /storage/sdcard1/nvram/md/NVRAM/NVD_IMEI/MP0B_001 /data/nvram/md/NVRAM/NVD_IMEI/MP0B_001
+		chmod 660 /data/nvram/md/NVRAM/NVD_IMEI/MP0B_001
+		echo "restaurada correctamente" >> $ETP
+		mv -f /storage/sdcard1/nvram/md/NVRAM/NVD_IMEI/MP0B_001 /data/dummy
+	else
+	echo "Copia no encontrada" >> $ETP
+	fi;
+fi;
+
+if [[ -f /data/ETP/2 && -f /data/dummy ]]; then
+	echo "Moviendo archivo a la carpeta /data/ETP/" >> $ETP
+	mv /data/dummy /data/ETP/MP0B_001
+	rm -f /data/ETP/2
+	echo "Autodestruyendo Script en 3... 2... 1..." >> $ETP
+	rm -f /etc/init.d/03restimei
+	echo "Script destruido" >> $ETP
+	else
+	echo "Dejando todo donde estaba" >> $ETP
+fi;
+
+contador=1
+contador=$((contador+1))
+touch /data/ETP/$contador
+
+echo "Numero de reinicios: $contador" >> $ETP
+echo Hora de comienzo: $( date +"%d-%m-%Y %H:%M:%S" )
+
+echo "FIN DEL SCRIPT" >> $ETP;
